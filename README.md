@@ -1,59 +1,144 @@
-# Reputation Detection & Business Insight — Final Project
+# 🏋️ Gym Comparator AI
 
-Analisa & bandingkan reputational risk 2 tempat kebugaran (gym/fitness center) berdasarkan
-review Google Maps, menggunakan model Deep Learning (LSTM) untuk klasifikasi sentimen 3
-kelas (Positif / Negatif / Netral), lalu ditampilkan sebagai perbandingan side-by-side di
-Streamlit.
+An AI-powered web application that compares two gyms from Google Maps links, using **Bidirectional LSTM** for sentiment analysis and **rule-based aspect categorization** for pros/cons extraction.
 
-## Struktur Folder 
+![CI](https://github.com/maxwelllee789/Gym_Sentiment_Analysis/actions/workflows/ci.yml/badge.svg)
 
-```
-final_project/
-├── requirements.txt
-├── README.md
-├── eda.py # STANDALONE, bukan bagian alur running app — lihat bagian EDA di bawah
+---
+
+## 📖 Overview
+
+Choosing a gym is hard — reviews are scattered, biased, and hard to compare. **Gym Comparator AI** solves this by:
+
+1. **Scraping** Google Maps reviews automatically (via Apify)
+2. **Analyzing** sentiment using a custom-trained Bidirectional LSTM model (87% accuracy)
+3. **Categorizing** pros/cons into 12 aspects (Equipment, Cleanliness, Price, Location, etc.)
+4. **Comparing** two gyms side-by-side and recommending the better one
+5. **Storing** every analysis in a local SQLite database
+
+---
+
+## ✨ Features
+
+- 🔗 **Paste 2 Google Maps links** → get instant comparison
+- 🧠 **Custom LSTM model** trained on 26K+ gym reviews (UCSD Google Local dataset)
+- 📊 **12-aspect categorization**: Equipment, Cleanliness, Showers, Price, Location, Staff, Atmosphere, Hours, Classes, AC, Safety, Amenities
+- 💾 **SQLite persistence**: every analysis is logged and queryable
+- ⚡ **Smart caching**: repeated queries load instantly from cache
+- 🎨 **Dark neon UI** with Streamlit
+- 🚀 **REST API** via FastAPI with Swagger docs
+- ✅ **CI/CD pipeline** via GitHub Actions
+
+---
+
+## 🏗️ Architecture
+┌─────────────────────┐
+│ User Input (URL) │
+└──────────┬──────────┘
+↓
+┌─────────────────────┐
+│ Apify Scraper │ → Google Maps reviews
+└──────────┬──────────┘
+↓
+┌─────────────────────┐
+│ Cache Layer │ → JSON + CSV
+└──────────┬──────────┘
+↓
+┌─────────────────────┐
+│ LSTM Inference │ → Sentiment per sentence
+└──────────┬──────────┘
+↓
+┌─────────────────────┐
+│ Aspect Categorizer │ → 12 rule-based categories
+└──────────┬──────────┘
+↓
+┌─────────────────────┐
+│ SQLite + Streamlit │ → UI + persistence
+└─────────────────────┘
+
+
+---
+
+## 📁 Project Structure
+Gym_Sentiment_Analysis/
+├── .github/workflows/ci.yml # CI/CD pipeline
+├── api/
+│ └── main.py # FastAPI REST API
+├── app/
+│ ├── app.py # Streamlit UI
+│ ├── inference.py # LSTM + aspect categorization
+│ ├── recommendation.py # Winner selection logic
+│ └── assets/ # Logo & background
 ├── data/
-│ ├── raw/ # taruh gym_reviews_NY_clean.csv & gym_reviews_VT_clean.csv di sini
-│ └── prepare_dataset.py # load CSV -> cleaning -> label -> split -> CSV bersih
-├── preprocessing.py # cleaning teks + split_sentences (dipakai training & app)
-├── train_model.py # training LSTM (oversampling) + tokenizer + evaluasi
-├── scrape_reviews.py # scraping toko demo pakai Apify -> CSV cache
-├── model/ # output: model .keras, tokenizer .pkl, label encoder
-├── data/cache/ # hasil scraping toko-toko (link -> data)
-└── app/
-├── app.py # Streamlit utama
-├── inference.py # load model + predict per kalimat + agregasi
-└── recommendation.py # logic rule-based rekomendasi & kesimpulan
-```
+│ ├── raw/ # Original dataset (not pushed)
+│ ├── processed/ # Train/val/test splits (not pushed)
+│ └── cache/ # Scraped gym data (not pushed)
+├── model/ # Trained LSTM artifacts (not pushed)
+├── db.py # SQLite schema & helpers
+├── train_model.py # LSTM training script
+├── tune_model.py # Hyperparameter tuning
+├── preprocessing.py # Text cleaning + sentence splitting
+├── scrape_reviews.py # Apify integration
+├── eda.py # Exploratory Data Analysis
+└── requirements.txt
 
-## Sumber Dataset
 
-`gym_reviews_NY_clean.csv` + `gym_reviews_VT_clean.csv`: subset UCSD Google Local Reviews
-(New York + Vermont) yang sudah difilter manual khusus kategori kebugaran (gym, fitness,
-yoga, pilates, crossfit, martial arts, dll — termasuk konsep seperti Hyrox). Total ~26.179
-review dari ~3.826 tempat kebugaran, bahasa Inggris. Taruh kedua file ini di `data/raw/`
-sebelum menjalankan `prepare_dataset.py`.
+---
 
-## Alur Kerja (urutan menjalankan)
+## 🧠 Model Details
 
-1. Taruh `gym_reviews_NY_clean.csv` dan `gym_reviews_VT_clean.csv` di `data/raw/`
-2. `python data/prepare_dataset.py` — gabungkan kedua file, cleaning teks, generate label
-   dari rating, split train/val/test
-3. `python train_model.py` — training LSTM (dengan oversampling kelas minoritas di data
-   training untuk mengatasi imbalance), simpan model (`model/sentiment_lstm_model.keras`) + tokenizer
-4. Isi `.env` dengan `APIFY_API_TOKEN` (lihat `.env.example`)
-5. `streamlit run app/app.py` — jalankan aplikasi. User paste link Google Maps toko A &
-   B langsung → kalau link itu belum pernah discrape, app otomatis scrape live saat itu
-   juga (butuh beberapa detik) dan menyimpannya ke `data/cache/`; kalau link sudah pernah
-   dipakai sebelumnya, hasilnya langsung tampil dari cache (instan, tidak scrape ulang).
-   Toko yang pernah dicari juga otomatis muncul di dropdown untuk dipilih ulang.
+| Metric | Value |
+|---|---|
+| **Architecture** | Bidirectional LSTM + Embedding + Dense |
+| **Dataset** | UCSD Google Local Reviews (gym subset, English) |
+| **Training samples** | ~19,000 reviews |
+| **Test accuracy** | **87%** |
+| **F1 (positive)** | 0.93 |
+| **F1 (negative)** | 0.83 |
+| **F1 (neutral)** | 0.35 |
+| **Hyperparameter tuning** | 24 combinations (grid search) |
+| **Best config** | embed_dim=64, lstm_units=64, dropout=0.2, lr=0.001 |
 
-   (Opsional) Untuk menyiapkan beberapa toko ke cache sekaligus di awal — misalnya
-   sebelum presentasi, biar tidak perlu menunggu scraping saat demo — bisa jalankan
-   `python scrape_reviews.py --links-file links.txt` (1 link per baris) terlebih dahulu.
+> **Note:** Neutral class F1 is low due to class imbalance (7% of data) and the inherent ambiguity of 3-star reviews. This is expected and documented.
 
-## EDA (Exploratory Data Analysis) — opsional, untuk laporan saja
+---
 
-`eda.py` **bukan bagian dari alur running aplikasi** — tidak dipanggil oleh `train_model.py`
-maupun `app.py`. Ini script terpisah yang dijalankan manual, sekali, setelah `prepare_dataset.py`
-selesai, untuk menghasilkan grafik yang dipakai di laporan/slide presentasi final project:
+## 🚀 Quick Start
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/maxwelllee789/Gym_Sentiment_Analysis.git
+cd Gym_Sentiment_Analysis
+python -m venv venv
+venv\Scripts\activate          # Windows
+pip install -r requirements.txt
+
+🛠️ Tech Stack
+Category	Tools
+Deep Learning	TensorFlow / Keras
+NLP	Custom LSTM, rule-based aspect categorization
+Web Framework	Streamlit, FastAPI
+Database	SQLite
+Scraping	Apify (Google Maps Reviews Scraper)
+Visualization	Matplotlib, Seaborn, WordCloud
+CI/CD	GitHub Actions
+Language	Python 3.11+
+
+📈 Model Performance
+Trained model reaches 87% test accuracy across 3 sentiment classes on ~19K gym reviews. Detailed evaluation:
+Positive reviews: F1 = 0.93 (excellent)
+Negative reviews: F1 = 0.83 (good)
+Neutral reviews: F1 = 0.35 (limited by data imbalance)
+Hyperparameter tuning was performed with 24 grid-search combinations. See tune_model.py.
+
+🤝 Contributing
+This is a final bootcamp project. Pull requests are welcome for educational purposes.
+
+📝 License
+For academic use only.
+
+🙏 Acknowledgments
+UCSD Google Local Reviews dataset
+Apify for scraping infrastructure
+Streamlit & FastAPI communities
