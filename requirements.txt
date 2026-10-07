@@ -1,0 +1,16 @@
+pandas
+numpy
+scikit-learn
+tensorflow
+streamlit
+matplotlib
+seaborn
+wordcloud
+apify-client
+requests
+Pillow
+python-dotenv
+protobuf
+fastapi
+uvicorn
+pytest

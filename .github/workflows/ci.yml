@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "setuptools<82"
+          pip install pandas numpy scikit-learn streamlit fastapi uvicorn requests Pillow python-dotenv matplotlib seaborn wordcloud
+
+      - name: Smoke test imports
+        run: |
+          python -c "import pandas, numpy, sklearn"
+          python -c "import streamlit, fastapi, uvicorn"
+          python -c "from preprocessing import clean_text, rating_to_label"
+
+      - name: Verify project structure
+        run: |
+          test -d app || exit 1
+          test -d api || exit 1
+          test -f db.py || exit 1
+          test -f train_model.py || exit 1
+          test -f preprocessing.py || exit 1
+          test -f requirements.txt || exit 1
+          echo "✓ Project structure OK"
+
+      - name: Check code syntax
+        run: |
+          python -m py_compile app/app.py
+          python -m py_compile app/inference.py
+          python -m py_compile app/recommendation.py
+          python -m py_compile api/main.py
+          python -m py_compile db.py
+          python -m py_compile train_model.py
+          python -m py_compile preprocessing.py
+          python -m py_compile scrape_reviews.py
+          echo "✓ All Python files compile OK"
