@@ -13,6 +13,9 @@ Choosing a gym is hard — reviews are scattered, biased, and hard to compare. *
 1. **Scraping** Google Maps reviews automatically (via Apify)
 2. **Analyzing** sentiment using a custom-trained Bidirectional LSTM model (87% accuracy)
 3. **Categorizing** pros/cons into 12 aspects (Equipment, Cleanliness, Price, Location, etc.)
+**Note** : 12-Aspect Extraction Methodology:
+The extraction of the 12 specific aspects from the reviews was performed using a rule-based Keyword Matching approach with a predefined dictionary. This method scans the text to identify specific keywords associated with each aspect. Examples of the extracted aspects include: Cleanliness, Facilities, Equipment Condition, Price, Customer Service, and Ambiance.
+  
 4. **Comparing** two gyms side-by-side and recommending the better one
 5. **Storing** every analysis in a local SQLite database
 
@@ -131,6 +134,9 @@ Positive reviews: F1 = 0.93 (excellent)
 Negative reviews: F1 = 0.83 (good)
 Neutral reviews: F1 = 0.35 (limited by data imbalance)
 Hyperparameter tuning was performed with 24 grid-search combinations. See tune_model.py.
+
+Neutral Class Imbalance & Low F1-Score:
+The sentiment labels were derived directly from user star ratings (1–2: Negative, 3: Neutral, 4–5: Positive). Because the scraped dataset naturally contains very few 3-star reviews, the Neutral class is highly imbalanced. This significant data imbalance directly resulted in a low F1-score for the Neutral class (0.35), as the model struggled to learn its distinct features. For future improvements, addressing this issue by applying SMOTE (Synthetic Minority Over-sampling Technique) or performing manual annotation specifically for the Neutral class is highly recommended to improve the model's overall predictive balance.
 
 🤝 Contributing
 This is a final bootcamp project. Pull requests are welcome for educational purposes.
